@@ -1,9 +1,9 @@
 import React, { createContext, useContext, useMemo, useState } from "react";
-import { PRODUCTS, RESTOCK_ITEMS, INITIAL_CART } from "../mock";
+import { PRODUCTS, RESTOCK_ITEMS, RESTOCK_OPTION_PRODUCTS, INITIAL_CART } from "../mock";
 
 const CartContext = createContext(null);
 
-// A lookup of every purchasable product (grid + restocker items)
+// A lookup of every purchasable product (grid + restocker items + option variants)
 const ALL_PRODUCTS = [
   ...PRODUCTS,
   ...RESTOCK_ITEMS.map((r) => ({
@@ -16,6 +16,7 @@ const ALL_PRODUCTS = [
     discount: r.discount,
     image: r.image,
   })),
+  ...RESTOCK_OPTION_PRODUCTS,
 ];
 
 export function CartProvider({ children }) {

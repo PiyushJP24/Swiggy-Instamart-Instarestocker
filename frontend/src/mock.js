@@ -246,6 +246,20 @@ export function computeRestockStatus(item) {
   };
 }
 
+// Purchasable variants from restocker "options" (e.g. 350 g / 250 g bread sizes)
+export const RESTOCK_OPTION_PRODUCTS = RESTOCK_ITEMS.flatMap((r) =>
+  (r.options || []).map((o, i) => ({
+    id: `${r.id}-opt-${i}`,
+    name: `${r.brand} ${r.name}`,
+    brand: r.brand,
+    weight: o.weight,
+    price: o.price,
+    mrp: o.mrp,
+    discount: o.discount,
+    image: r.image,
+  }))
+);
+
 // Sort by urgency: already-out first, then soonest to run out
 export function getRestockPredictions() {
   return RESTOCK_ITEMS.map(computeRestockStatus).sort(

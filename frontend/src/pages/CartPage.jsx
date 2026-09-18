@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Trash2, GripHorizontal } from "lucide-react";
 import Header from "../components/Header";
@@ -14,8 +14,41 @@ export default function CartPage() {
   const [expanded, setExpanded] = useState(false);
   const predictions = getRestockPredictions();
   const shown = expanded ? predictions : predictions.slice(0, 2);
+  const restockRef = useRef(null);
 
   const freeDeliveryGap = Math.max(0, 68 - totals.subtotal);
+  const toPay = totals.mrpTotal - totals.savings + 5; // MRP - savings + handling
+
+  // Expand the InstaRestocker section when the user scrolls up while it is visible
+  useEffect(() => {
+    const maybeExpand = () => {
+      if (expanded) return;
+      const el = restockRef.current;
+      if (!el) return;
+      const rect = el.getBoundingClientRect();
+      if (rect.top < window.innerHeight * 0.9 && rect.bottom > 0) {
+        setExpanded(true);
+      }
+    };
+    const onWheel = (e) => {
+      if (e.deltaY < 0) maybeExpand();
+    };
+    let touchStartY = null;
+    const onTouchStart = (e) => {
+      touchStartY = e.touches[0].clientY;
+    };
+    const onTouchMove = (e) => {
+      if (touchStartY !== null && e.touches[0].clientY - touchStartY > 30) maybeExpand();
+    };
+    window.addEventListener("wheel", onWheel, { passive: true });
+    window.addEventListener("touchstart", onTouchStart, { passive: true });
+    window.addEventListener("touchmove", onTouchMove, { passive: true });
+    return () => {
+      window.removeEventListener("wheel", onWheel);
+      window.removeEventListener("touchstart", onTouchStart);
+      window.removeEventListener("touchmove", onTouchMove);
+    };
+  }, [expanded]);
 
   return (
     <div className="min-h-screen bg-[#f5f5f5] pb-28 md:pb-10">
@@ -75,7 +108,7 @@ export default function CartPage() {
           </div>
 
           {/* InstaRestocker */}
-          <div className="mt-4 rounded-2xl bg-white p-4 shadow-sm">
+          <div ref={restockRef} className="mt-4 rounded-2xl bg-white p-4 shadow-sm">
             <button
               onClick={() => setExpanded((v) => !v)}
               className="mx-auto mb-2 flex w-full flex-col items-center"
@@ -116,12 +149,12 @@ export default function CartPage() {
           <div className="sticky top-24 rounded-2xl bg-white p-5 shadow-sm">
             <h3 className="mb-3 text-[16px] font-bold text-gray-900">Bill Summary</h3>
             <div className="space-y-2 text-[14px] text-gray-600">
-              <div className="flex justify-between"><span>Item total</span><span>₹{totals.subtotal}</span></div>
-              <div className="flex justify-between"><span>Savings</span><span className="text-[#0c831f]">-₹{totals.savings}</span></div>
-              <div className="flex justify-between"><span>Handling Fee</span><span>₹5</span></div>
+              <div className="flex justify-between"><span>MRP Total</span><span>₹{totals.mrpTotal}</span></div>
+              <div className="flex justify-between"><span>Item Savings</span><span className="text-[#0c831f]">-₹{totals.savings}</span></div>
+              <div className="flex justify-between"><span>Handling Fee (incl GST)</span><span>₹5</span></div>
             </div>
             <div className="mt-3 flex justify-between border-t border-gray-100 pt-3 text-[16px] font-bold text-gray-900">
-              <span>To Pay</span><span>₹{totals.subtotal + 5}</span>
+              <span>To Pay</span><span>₹{toPay}</span>
             </div>
             <button
               onClick={() => navigate("/checkout")}
@@ -137,7 +170,7 @@ export default function CartPage() {
       <div className="fixed bottom-0 left-0 right-0 z-30 border-t border-gray-100 bg-white px-4 py-3 md:hidden">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-[18px] font-extrabold text-gray-900">₹{totals.subtotal + 5}</p>
+            <p className="text-[18px] font-extrabold text-gray-900">₹{toPay}</p>
             <button className="text-[12px] font-bold text-[#0c831f]">View Detailed Bill</button>
           </div>
           <button
